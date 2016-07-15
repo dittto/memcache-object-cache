@@ -150,91 +150,7 @@ class WP_Object_Cache {
 	var $cache_enabled = true;
 	var $default_expiration = 0;
 
-	public function get_alloptions() {
-		// Check our internal cache, to avoid the more expensive get-multi
-		$key = $this->key( 'alloptions', 'options' );
-		if ( isset( $this->cache[ $key ] ) ) {
-			return $this->cache[ $key ];
-		}
-
-		$keys = $this->get( 'alloptionskeys', 'options' );
-		if ( empty( $keys ) || ! is_array( $keys ) ) {
-			return array();
-		}
-
-		$data = $this->get_multi( array( 'options' => array_keys( $keys ) ) );
-		if ( empty( $data ) || empty( $data['options'] ) ) {
-			return array();
-		}
-
-		$this->cache[ $key ] = $data['options'];
-		return $this->cache[ $key ];
-	}
-
-	public function set_alloptions( $data ) {
-		$internal_cache_key = $this->key( 'alloptions', 'options' );
-		$existing = $internal_cache = $this->get_alloptions();
-
-		$keys = $this->get( 'alloptionskeys', 'options' );
-		if ( empty( $keys ) || ! is_array( $keys ) ) {
-			$keys = array();
-		}
-
-		// While you could use array_diff here, it ends up being a bit more
-		// complicated than just checking
-		foreach ( $data as $key => $value ) {
-			if ( isset( $existing[ $key ] ) && $existing[ $key ] === $value ) {
-				continue;
-			}
-
-			if ( ! isset( $keys[ $key ] ) ) {
-				$keys[ $key ] = true;
-			}
-
-			if ( ! $this->set( $key, $value, 'options' ) ) {
-				return false;
-			}
-
-			$internal_cache[ $key ] = $value;
-		}
-
-		// Remove deleted elements
-		foreach ( $existing as $key => $value ) {
-			if ( isset( $data[ $key ] ) ) {
-				continue;
-			}
-
-			if ( isset( $keys[ $key ] ) ) {
-				unset( $keys[ $key ] );
-			}
-
-			if ( ! $this->delete( $key, 'options' ) ) {
-				return false;
-			}
-
-			unset( $internal_cache[ $key ] );
-		}
-
-		if ( ! $this->set( 'alloptionskeys', $keys, 'options' ) ) {
-			return false;
-		}
-		$this->cache[ $internal_cache_key ] = $internal_cache;
-
-		return true;
-	}
-
-	public function delete_alloptions() {
-		$key = $this->key( 'alloptions', 'options' );
-		$this->cache[ $key ] = array();
-
-		return $this->delete( 'alloptionskeys', 'options' );
-	}
-
 	function add($id, $data, $group = 'default', $expire = 0) {
-		if ( $id === 'alloptions' && $group === 'options' ) {
-			return $this->set_alloptions( $data );
-		}
-
 		$key = $this->key($id, $group);
 
 		if ( is_object( $data ) ) {
@@ -305,10 +221,6 @@ class WP_Object_Cache {
 	}
 
 	function delete($id, $group = 'default') {
-		if ( $id === 'alloptions' && $group === 'options' ) {
-			return $this->delete_alloptions();
-		}
-
 		$key = $this->key($id, $group);
 
 		if ( in_array($group, $this->no_mc_groups) ) {
@@ -370,10 +282,6 @@ class WP_Object_Cache {
 	}
 
 	function get($id, $group = 'default', $force = false) {
-		if ( $id === 'alloptions' && $group === 'options' ) {
-			return $this->get_alloptions();
-		}
-
 		$key = $this->key($id, $group);
 		$mc =& $this->get_mc($group);
 
@@ -490,10 +398,6 @@ class WP_Object_Cache {
 	}
 
 	function set($id, $data, $group = 'default', $expire = 0) {
-		if ( $id === 'alloptions' && $group === 'options' ) {
-			return $this->set_alloptions( $data );
-		}
-
 		$key = $this->key($id, $group);
 		if ( isset( $this->cache[ $key ] ) && ( 'checkthedatabaseplease' === $this->cache[ $key ] ) ) {
 			return false;
@@ -531,6 +435,9 @@ class WP_Object_Cache {
 		@ ++$this->stats['set'];
 		$this->stats['set_time'] += $time_taken;
 		$this->group_ops[$group][] = "set $id";
+
+		if ('alloptions' == $id && 'options' == $group)
+			wp_cache_delete('alloptions', 'options');
 
 		return $result;
 	}
