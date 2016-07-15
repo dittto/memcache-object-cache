@@ -1,6 +1,6 @@
 
 {
-	"name": "humanmade/memcache-object-cache",
+	"name": "timeincuk/memcache-object-cache",
 	"description": "Memcached backend for the WP Object Cache.",
 	"homepage": "https://github.com/humanmade/memcache-object-cache",
 	"keywords": [
