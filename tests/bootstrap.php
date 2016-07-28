@@ -19,7 +19,7 @@ if ( ! $_core_dir ) {
 require_once $_tests_dir . '/includes/functions.php';
 
 // Manually copy the object-cache.php to wp-content
-copy( dirname( __FILE__ ) . '/../object-cache.php', $_core_dir . '/wp-content/object-cache.php' );
+copy( dirname( __FILE__ ) . '/../src/object-cache.php', $_core_dir . '/wp-content/object-cache.php' );
 
 // Start up the WP testing environment.
 require $_tests_dir . '/includes/bootstrap.php';
