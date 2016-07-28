@@ -150,6 +150,8 @@ class WP_Object_Cache {
 	var $cache_enabled = true;
 	var $default_expiration = 0;
 
+	var $blog_prefix = 0;
+
 	function add($id, $data, $group = 'default', $expire = 0) {
 		$key = $this->key($id, $group);
 
@@ -259,11 +261,12 @@ class WP_Object_Cache {
 			$this->reset_stats();
 		}
 
-		$ret = true;
-		foreach ( array_keys( $this->mc ) as $group ) {
-			$ret &= $this->mc[ $group ]->flush();
+		if ( function_exists( 'is_main_site' ) && is_main_site() ) {
+			$this->set_site_key( $this->global_prefix );
 		}
-		return $ret;
+		$this->set_site_key( $this->blog_prefix );
+
+		return true;
 	}
 
 	/**
@@ -377,7 +380,44 @@ class WP_Object_Cache {
 			$prefix = $this->blog_prefix;
 		}
 
-		return preg_replace('/\s+/', '', WP_CACHE_KEY_SALT . ":$prefix$group:$key");
+		$site_key = $this->get_site_key( $prefix );
+
+		return preg_replace('/\s+/', '', WP_CACHE_KEY_SALT . ":$site_key$prefix:$group:$key" );
+	}
+
+	function get_site_key( $blog_id = false ) {
+
+		$blog_id = empty( $blog_id ) ? 'global' : $blog_id;
+		$key = preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . ":site_key:$blog_id" );
+		$mc =& $this->get_mc( 'site_keys' );
+
+		if ( ! isset( $this->cache[ $key ] ) ) {
+
+			$this->cache[ $key ] = $mc->get( $key );
+
+			if ( false === $this->cache[ $key ] ) {
+
+				$this->set_site_key( $blog_id );
+
+			}
+
+		}
+
+		return $this->cache[ $key ];
+
+	}
+
+	function set_site_key( $blog_id ) {
+
+		$blog_id = empty( $blog_id ) ? 'global' : $blog_id;
+		$key = preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . ":site_key:$blog_id" );
+		$mc =& $this->get_mc( 'site_keys' );
+
+		$value = (string) intval( microtime( true ) * 1e6 );
+
+		$mc->set( $key, $value, false, 0 );
+		$this->cache[ $key ] = $value;
+
 	}
 
 	function replace( $id, $data, $group = 'default', $expire = 0 ) {
@@ -446,7 +486,7 @@ class WP_Object_Cache {
 		global $wpdb;
 		$table_prefix      = $wpdb->prefix;
 		$blog_id           = (int) $blog_id;
-		$this->blog_prefix = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
+		$this->blog_prefix = ( is_multisite() ? $blog_id : $table_prefix );
 	}
 
 	function colorize_debug_line($line) {
@@ -541,7 +581,7 @@ class WP_Object_Cache {
 		$this->blog_prefix = '';
 		if ( function_exists( 'is_multisite' ) ) {
 			$this->global_prefix = ( is_multisite() || defined('CUSTOM_USER_TABLE') && defined('CUSTOM_USER_META_TABLE') ) ? '' : $table_prefix;
-			$this->blog_prefix = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
+			$this->blog_prefix = ( is_multisite() ? $blog_id : $table_prefix );
 		}
 
 		$this->reset_stats();
