@@ -385,10 +385,17 @@ class WP_Object_Cache {
 		return preg_replace('/\s+/', '', WP_CACHE_KEY_SALT . ":$site_key$prefix:$group:$key" );
 	}
 
-	function get_site_key( $blog_id = false ) {
+	function build_site_key( $blog_id ) {
 
 		$blog_id = empty( $blog_id ) ? 'global' : $blog_id;
-		$key = preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . ":site_key:$blog_id" );
+
+		return preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . ":site_key:$blog_id" );
+
+	}
+
+	function get_site_key( $blog_id = false ) {
+
+		$key = $this->build_site_key( $blog_id );
 		$mc =& $this->get_mc( 'site_keys' );
 
 		if ( ! isset( $this->cache[ $key ] ) ) {
@@ -409,8 +416,7 @@ class WP_Object_Cache {
 
 	function set_site_key( $blog_id ) {
 
-		$blog_id = empty( $blog_id ) ? 'global' : $blog_id;
-		$key = preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . ":site_key:$blog_id" );
+		$key = $this->build_site_key( $blog_id );
 		$mc =& $this->get_mc( 'site_keys' );
 
 		$value = (string) intval( microtime( true ) * 1e6 );
