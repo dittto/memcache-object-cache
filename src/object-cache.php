@@ -262,9 +262,14 @@ class WP_Object_Cache {
 		}
 
 		if ( function_exists( 'is_main_site' ) && is_main_site() ) {
-			$this->set_site_key( $this->global_prefix );
+			if( ! $this->set_site_key( $this->global_prefix ) ) {
+				return false;
+			}
 		}
-		$this->set_site_key( $this->blog_prefix );
+
+		if( ! $this->set_site_key( $this->blog_prefix ) ) {
+			return false;
+		}
 
 		return true;
 	}
@@ -385,7 +390,7 @@ class WP_Object_Cache {
 		return preg_replace('/\s+/', '', WP_CACHE_KEY_SALT . ":$site_key$prefix:$group:$key" );
 	}
 
-	function build_site_key( $blog_id ) {
+	private function build_site_key( $blog_id ) {
 
 		$blog_id = empty( $blog_id ) ? 'global' : $blog_id;
 
@@ -393,7 +398,7 @@ class WP_Object_Cache {
 
 	}
 
-	function get_site_key( $blog_id = false ) {
+	public function get_site_key( $blog_id = false ) {
 
 		$key = $this->build_site_key( $blog_id );
 		$mc =& $this->get_mc( 'site_keys' );
@@ -414,15 +419,15 @@ class WP_Object_Cache {
 
 	}
 
-	function set_site_key( $blog_id ) {
+	public function set_site_key( $blog_id = false ) {
 
 		$key = $this->build_site_key( $blog_id );
 		$mc =& $this->get_mc( 'site_keys' );
 
 		$value = (string) intval( microtime( true ) * 1e6 );
 
-		$mc->set( $key, $value, false, 0 );
 		$this->cache[ $key ] = $value;
+		return $mc->set( $key, $value, false, 0 );
 
 	}
 
