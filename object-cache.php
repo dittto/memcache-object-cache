@@ -97,7 +97,7 @@ function wp_cache_get_multi($groups, $force = false) {
 	return $wp_object_cache->get_multi($groups, $force);
 }
 
-if ( defined( 'WP_IGNORE_MEMCACHE_INIT' ) === false || WP_IGNORE_MEMCACHE_INIT === false ) {
+if ( defined( 'WP_IGNORE_OBJECT_CACHE_INIT' ) === false || WP_IGNORE_OBJECT_CACHE_INIT === false ) {
     function wp_cache_init() {
         global $wp_object_cache;
 
